@@ -112,3 +112,45 @@ void MTCNN::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>&
         }
     }
 }
+
+void MTCNN::nmsTwoBoxs(vector<Bbox>& boundingBox_, vector<Bbox>& previousBox_, const float overlap_threshold, string modelname)
+{
+	if (boundingBox_.empty()) {
+		return;
+	}
+	sort(boundingBox_.begin(), boundingBox_.end(), cmpScore);
+	float IOU = 0;
+	float maxX = 0;
+	float maxY = 0;
+	float minX = 0;
+	float minY = 0;
+	//std::cout << boundingBox_.size() << " ";
+	for (std::vector<Bbox>::iterator ity = previousBox_.begin(); ity != previousBox_.end(); ity++) {
+		for (std::vector<Bbox>::iterator itx = boundingBox_.begin(); itx != boundingBox_.end();) {
+			int i = itx - boundingBox_.begin();
+			int j = ity - previousBox_.begin();
+			maxX = std::max(boundingBox_.at(i).x1, previousBox_.at(j).x1);
+			maxY = std::max(boundingBox_.at(i).y1, previousBox_.at(j).y1);
+			minX = std::min(boundingBox_.at(i).x2, previousBox_.at(j).x2);
+			minY = std::min(boundingBox_.at(i).y2, previousBox_.at(j).y2);
+			//maxX1 and maxY1 reuse
+			maxX = ((minX - maxX + 1)>0) ? (minX - maxX + 1) : 0;
+			maxY = ((minY - maxY + 1)>0) ? (minY - maxY + 1) : 0;
+			//IOU reuse for the area of two bbox
+			IOU = maxX * maxY;
+			if (!modelname.compare("Union"))
+				IOU = IOU / (boundingBox_.at(i).area + previousBox_.at(j).area - IOU);
+			else if (!modelname.compare("Min")) {
+				IOU = IOU / ((boundingBox_.at(i).area < previousBox_.at(j).area) ? boundingBox_.at(i).area : previousBox_.at(j).area);
+			}
+			if (IOU > overlap_threshold&&boundingBox_.at(i).score>previousBox_.at(j).score) {
+			//if (IOU > overlap_threshold) {
+				itx = boundingBox_.erase(itx);
+			}
+			else {
+				itx++;
+			}
+		}
+	}
+	//std::cout << boundingBox_.size() << std::endl;
+}
