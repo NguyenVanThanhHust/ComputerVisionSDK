@@ -83,3 +83,32 @@ MTCNN::~MTCNN(){
 void MTCNN::SetMinFace(int minSize){
 	minsize = minSize;
 }
+
+void MTCNN::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>& boundingBox_, float scale){
+    const int stride = 2;
+    const int cellsize = 12;
+    //score p
+    float *p = score.channel(1);//score.data + score.cstep;
+    //float *plocal = location.data;
+    Bbox bbox;
+    float inv_scale = 1.0f/scale;
+    for(int row=0;row<score.h;row++){
+        for(int col=0;col<score.w;col++){
+            if(*p>threshold[0]){
+                bbox.score = *p;
+                bbox.x1 = round((stride*col+1)*inv_scale);
+                bbox.y1 = round((stride*row+1)*inv_scale);
+                bbox.x2 = round((stride*col+1+cellsize)*inv_scale);
+                bbox.y2 = round((stride*row+1+cellsize)*inv_scale);
+                bbox.area = (bbox.x2 - bbox.x1) * (bbox.y2 - bbox.y1);
+                const int index = row * score.w + col;
+                for(int channel=0;channel<4;channel++){
+                    bbox.regreCoord[channel]=location.channel(channel)[index];
+                }
+                boundingBox_.push_back(bbox);
+            }
+            p++;
+            //plocal++;
+        }
+    }
+}
