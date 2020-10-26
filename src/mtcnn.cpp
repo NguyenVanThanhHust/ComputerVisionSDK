@@ -248,3 +248,147 @@ void MTCNN::refine(vector<Bbox> &vecBbox, const int &height, const int &width, b
         it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
     }
 }
+
+void MTCNN::PNet(float scale)
+{
+	//first stage
+	int hs = (int)ceil(img_h*scale);
+	int ws = (int)ceil(img_w*scale);
+	ncnn::Mat in;
+	resize_bilinear(img, in, ws, hs);
+	ncnn::Extractor ex = Pnet.create_extractor();
+	ex.set_light_mode(true);
+	//sex.set_num_threads(4);
+	ex.input("data", in);
+	ncnn::Mat score_, location_;
+	ex.extract("prob1", score_);
+	ex.extract("conv4-2", location_);
+	std::vector<Bbox> boundingBox_;
+
+	generateBbox(score_, location_, boundingBox_, scale);
+	nms(boundingBox_, nms_threshold[0]);
+
+	firstBbox_.insert(firstBbox_.end(), boundingBox_.begin(), boundingBox_.end());
+	boundingBox_.clear();
+}
+
+void MTCNN::PNet(){
+    firstBbox_.clear();
+    float minl = img_w < img_h? img_w: img_h;
+    float m = (float)MIN_DET_SIZE/minsize;
+    minl *= m;
+    float factor = pre_facetor;
+    vector<float> scales_;
+    while(minl>MIN_DET_SIZE){
+        scales_.push_back(m);
+        minl *= factor;
+        m = m*factor;
+    }
+    for (size_t i = 0; i < scales_.size(); i++) {
+        int hs = (int)ceil(img_h*scales_[i]);
+        int ws = (int)ceil(img_w*scales_[i]);
+        ncnn::Mat in;
+        resize_bilinear(img, in, ws, hs);
+        ncnn::Extractor ex = Pnet.create_extractor();
+        //ex.set_num_threads(2);
+        ex.set_light_mode(true);
+        ex.input("data", in);
+        ncnn::Mat score_, location_;
+        ex.extract("prob1", score_);
+        ex.extract("conv4-2", location_);
+        std::vector<Bbox> boundingBox_;
+        generateBbox(score_, location_, boundingBox_, scales_[i]);
+        nms(boundingBox_, nms_threshold[0]);
+        firstBbox_.insert(firstBbox_.end(), boundingBox_.begin(), boundingBox_.end());
+        boundingBox_.clear();
+    }
+
+    firstBbox_.erase(std::remove_if(firstBbox_.begin(), firstBbox_.end(), [](const auto& bbox) {
+        return bbox.score < 0.98;}), firstBbox_.end());
+}
+void MTCNN::RNet(){
+    secondBbox_.clear();
+    int count = 0;
+    for(vector<Bbox>::iterator it=firstBbox_.begin(); it!=firstBbox_.end();it++){
+        ncnn::Mat tempIm;
+        copy_cut_border(img, tempIm, (*it).y1, img_h-(*it).y2, (*it).x1, img_w-(*it).x2);
+        ncnn::Mat in;
+        resize_bilinear(tempIm, in, 24, 24);
+        ncnn::Extractor ex = Rnet.create_extractor();
+		//ex.set_num_threads(2);
+        ex.set_light_mode(true);
+        ex.input("data", in);
+        ncnn::Mat score, bbox;
+        ex.extract("prob1", score);
+        ex.extract("conv5-2", bbox);
+		if ((float)score[1] > threshold[1]) {
+			for (int channel = 0; channel<4; channel++) {
+				it->regreCoord[channel] = (float)bbox[channel];//*(bbox.data+channel*bbox.cstep);
+			}
+			it->area = (it->x2 - it->x1)*(it->y2 - it->y1);
+			it->score = score.channel(1)[0];//*(score.data+score.cstep);
+			secondBbox_.push_back(*it);
+		}
+    }
+}
+void MTCNN::ONet(){
+    thirdBbox_.clear();
+    for(vector<Bbox>::iterator it=secondBbox_.begin(); it!=secondBbox_.end();it++){
+        ncnn::Mat tempIm;
+        copy_cut_border(img, tempIm, (*it).y1, img_h-(*it).y2, (*it).x1, img_w-(*it).x2);
+        ncnn::Mat in;
+        resize_bilinear(tempIm, in, 48, 48);
+        ncnn::Extractor ex = Onet.create_extractor();
+		//ex.set_num_threads(2);
+        ex.set_light_mode(true);
+        ex.input("data", in);
+        ncnn::Mat score, bbox, keyPoint;
+        ex.extract("prob1", score);
+        ex.extract("conv6-2", bbox);
+        ex.extract("conv6-3", keyPoint);
+		if ((float)score[1] > threshold[2]) {
+			for (int channel = 0; channel < 4; channel++) {
+				it->regreCoord[channel] = (float)bbox[channel];
+			}
+			it->area = (it->x2 - it->x1) * (it->y2 - it->y1);
+			it->score = score.channel(1)[0];
+			for (int num = 0; num<5; num++) {
+				//(it->ppoint)[num] = it->x1 + (it->x2 - it->x1) * keyPoint[num];
+				it->landmark.x[num] = it->x1 + (it->x2 - it->x1) * keyPoint[num];
+				//(it->ppoint)[num + 5] = it->y1 + (it->y2 - it->y1) * keyPoint[num + 5];
+				it->landmark.y[num] = it->y1 + (it->y2 - it->y1) * keyPoint[num + 5];
+			}
+
+			thirdBbox_.push_back(*it);
+		}
+    }
+}
+void MTCNN::detect(ncnn::Mat& img_, std::vector<Bbox>& finalBbox_){
+    img = img_;
+    img_w = img.w;
+    img_h = img.h;
+    img.substract_mean_normalize(mean_vals, norm_vals);
+
+    PNet();
+    //the first stage's nms
+    if(firstBbox_.size() < 1) return;
+    nms(firstBbox_, nms_threshold[0]);
+    refine(firstBbox_, img_h, img_w, true);
+    //printf("firstBbox_.size()=%d\n", firstBbox_.size());
+
+
+    //second stage
+    RNet();
+    //printf("secondBbox_.size()=%d\n", secondBbox_.size());
+    if(secondBbox_.size() < 1) return;
+    nms(secondBbox_, nms_threshold[1]);
+    refine(secondBbox_, img_h, img_w, true);
+
+    //third stage 
+    ONet();
+    //printf("thirdBbox_.size()=%d\n", thirdBbox_.size());
+    if(thirdBbox_.size() < 1) return;
+    refine(thirdBbox_, img_h, img_w, true);
+    nms(thirdBbox_, nms_threshold[2], "Min");
+    finalBbox_ = thirdBbox_;
+}
