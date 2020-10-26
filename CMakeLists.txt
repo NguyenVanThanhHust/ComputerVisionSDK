@@ -23,20 +23,20 @@ else()
     set(NCNN_BUILD_DIR build_amd64)
 endif()
 
-project(my_sdk VERSION 0.1.0 LANGUAGES CXX C)
+project(sdk VERSION 0.1.0 LANGUAGES CXX C)
 
 # SDK source files
-set(MY_SDK_SRC_FILES
-        src/my_sdk.cpp
+set(sdk_SRC_FILES
+        src/sdk.cpp
         src/mtcnn.cpp)
 
 # Our SDK library
-add_library(my_sdk_static ${MY_SDK_SRC_FILES})
+add_library(sdk_static ${sdk_SRC_FILES})
 
-target_include_directories(my_sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/)
-target_include_directories(my_sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
-target_include_directories(my_sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv-4.4.0/${OPENCV_BUILD_DIR}/packaged/usr/local/include/opencv4)
-target_include_directories(my_sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/ncnn-20200916/${NCNN_BUILD_DIR}/install/include/ncnn)
+target_include_directories(sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/)
+target_include_directories(sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv-4.4.0/${OPENCV_BUILD_DIR}/packaged/usr/local/include/opencv4)
+target_include_directories(sdk_static PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/ncnn-20200916/${NCNN_BUILD_DIR}/install/include/ncnn)
 
 # Dependency libraries which we will merge into our final static library
 set(LIBCNN ${CMAKE_CURRENT_LIST_DIR}/3rdparty/ncnn-20200916/${NCNN_BUILD_DIR}/install/lib/libncnn.a)
@@ -48,51 +48,51 @@ set(LIBOPENCV_JPG ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv-4.4.0/${OPENCV_BUILD
 set(LIBOPENCV_PNG ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv-4.4.0/${OPENCV_BUILD_DIR}/packaged/usr/local/lib/opencv4/3rdparty/liblibpng.a)
 set(LIBOPENCV_TIFF ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv-4.4.0/${OPENCV_BUILD_DIR}/packaged/usr/local/lib/opencv4/3rdparty/liblibtiff.a)
 
-# Combine all the static libraries into a single library: libmy_sdk.a
+# Combine all the static libraries into a single library: libsdk.a
 if (BUILD_ARM32)
-    add_custom_target(my_sdk
+    add_custom_target(sdk
             COMMAND
-            /bin/echo -e 'create libmy_sdk.a\\naddlib libmy_sdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | arm-linux-gnueabihf-ar -M
+            /bin/echo -e 'create libsdk.a\\naddlib libsdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | arm-linux-gnueabihf-ar -M
             DEPENDS
-            my_sdk_static
+            sdk_static
             COMMENT
-            "Merging dependency libraries into my_sdk_static to create libmy_sdk.a"
+            "Merging dependency libraries into sdk_static to create libsdk.a"
             )
 elseif(BUILD_ARM64)
-    add_custom_target(my_sdk
+    add_custom_target(sdk
             COMMAND
-            /bin/echo -e 'create libmy_sdk.a\\naddlib libmy_sdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | aarch64-linux-gnu-ar -M
+            /bin/echo -e 'create libsdk.a\\naddlib libsdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | aarch64-linux-gnu-ar -M
             DEPENDS
-            my_sdk_static
+            sdk_static
             COMMENT
-            "Merging dependency libraries into my_sdk_static to create libmy_sdk.a"
+            "Merging dependency libraries into sdk_static to create libsdk.a"
             )
 else()
-    add_custom_target(my_sdk
+    add_custom_target(sdk
             COMMAND
-            /bin/echo -e 'create libmy_sdk.a\\naddlib libmy_sdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | ar -M
+            /bin/echo -e 'create libsdk.a\\naddlib libsdk_static.a\\naddlib ${LIBCNN}\\naddlib ${LIBOPENCV_CORE}\\naddlib ${LIBOPENCV_IMGCODECS}\\naddlib ${LIBOPENCV_IMGPROC}\\naddlib ${LIBOPENCV_ZLIB}\\naddlib ${LIBOPENCV_PNG}\\naddlib ${LIBOPENCV_TIFF}\\naddlib ${LIBOPENCV_JPG}\\nsave\\nend' | ar -M
             DEPENDS
-            my_sdk_static
+            sdk_static
             COMMENT
-            "Merging dependency libraries into my_sdk_static to create libmy_sdk.a"
+            "Merging dependency libraries into sdk_static to create lib_sdk.a"
             )
 endif()
 
 # Unit test
 add_executable(run_tests tests/test.cpp)
-target_link_libraries(run_tests ${CMAKE_CURRENT_BINARY_DIR}/libmy_sdk.a)
+target_link_libraries(run_tests ${CMAKE_CURRENT_BINARY_DIR}/libsdk.a)
 target_include_directories(run_tests PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 target_include_directories(run_tests PRIVATE ${CMAKE_CURRENT_LIST_DIR}/3rdparty/catch2)
-add_dependencies(run_tests my_sdk)
+add_dependencies(run_tests sdk)
 
 # Create python bindings library
 # Only build for amd64
 if (NOT BUILD_ARM64 AND NOT BUILD_ARM32)
     add_subdirectory(3rdparty/pybind11-2.3.0)
     add_library(mysdk SHARED python/py_binding.cpp)
-    add_dependencies(mysdk my_sdk)
+    add_dependencies(mysdk sdk)
 
-    target_link_libraries(mysdk PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libmy_sdk.a pybind11::module)
+    target_link_libraries(mysdk PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libsdk.a pybind11::module)
 
     set_target_properties(mysdk PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
             SUFFIX "${PYTHON_MODULE_EXTENSION}")
@@ -104,5 +104,5 @@ endif()
 add_subdirectory(docs)
 
 install(DIRECTORY DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist)
-install(FILES ${CMAKE_CURRENT_LIST_DIR}/include/my_sdk.h DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libmy_sdk.a DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist)
+install(FILES ${CMAKE_CURRENT_LIST_DIR}/include/sdk.h DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libsdk.a DESTINATION ${CMAKE_CURRENT_LIST_DIR}/dist)
