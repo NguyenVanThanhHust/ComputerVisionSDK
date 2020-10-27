@@ -14,15 +14,15 @@ namespace sdk
     struct Point{
         int x;
         int y;
-    }
+    };
 
     struct FaceBoxAndLandmarks{
         Point topLeft;
         Point bottomRight;
         std::array<Point, 5> landmarks;
-    }
+    };
 
-    class SDK(){
+    class SDK {
         public:
             SDK();
             ~SDK();
@@ -33,5 +33,5 @@ namespace sdk
         private:
             class Impl; // Implementation class
             std::unique_ptr<Impl> pImpl; // Pointer to implementation class
-    }
+    };
 }

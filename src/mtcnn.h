@@ -25,10 +25,10 @@ namespace mtcnn {
         int y1;
         int x2;
         int y2;
-
+        float area;
         face_landmark landmark;
         float regreCoord[4];
-    }
+    };
 
     class MTCNN {
     
@@ -38,13 +38,13 @@ namespace mtcnn {
         MTCNN(const std::vector<std::string> param_files, const std::vector<std::string> bin_files);
         ~MTCNN();
 
-        void setMinFAce(int minSize);
-        void detect(ncnn::Mat& img_, std::vector<Box>& finalBox);
-        void detectMaxFace(ncnn::Mat& img_, std::vector<Box>& finalBox);
+        void setMinFace(int minSize);
+        void detect(ncnn::Mat& img_, std::vector<Bbox>& finalBox);
+        void detectMaxFace(ncnn::Mat& img_, std::vector<Bbox>& finalBox);
 
     private:
         void generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>& boundingBox, float scale);
-        void nmsTwoBoxs(std::vector<Bbox> &boundingBox_, std::vector<Bbox> &previousBox_, const float overlap_threshold);
+        void nmsTwoBoxs(std::vector<Bbox> &boundingBox_, std::vector<Bbox> &previousBox_, const float overlap_threshold, std::string modelname);
         void nms(std::vector<Bbox> &boundingBox_, const float overlap_threshold, std::string modelname="Union");
         void refine(std::vector<Bbox> &vecBbox, const int &height, const int &width, bool square);
 
@@ -67,7 +67,7 @@ namespace mtcnn {
     private:
         const float threshold[3] = { 0.4f, 0.4f, 0.4f };
         int minsize = 40;
-        const float pre_facetor = 0.709f;s
-    }
+        const float pre_facetor = 0.709f;
+    };
 }
 #endif //__MTCNN_NCNN_H__

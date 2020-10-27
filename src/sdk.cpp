@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "my_sdk.h"
+#include "sdk.h"
 #include "mtcnn.h"
 #include "opencv2/opencv.hpp"
 #include "net.h"
@@ -14,8 +14,8 @@ class SDK::Impl{
     ErrorCode getFaceBoxAndLandmarks(const std::string& imgPath, bool& faceDetected, 
                                         std::vector<FaceBoxAndLandmarks>& faceBoxAndLandmarks);
     private:
-    MCTNN m_mtcnn;
-}
+    MTCNN m_mtcnn;
+};
 
 SDK::~SDK() {}
 
@@ -23,12 +23,12 @@ SDK::SDK() {
     pImpl = std::make_unique<Impl>();
 }
 
-ErrorCode SDK::getFaceBoxAndLandmarks(const std::string& imgPath, bool& faceDetected, std::vector<FaceBoxAndLandmarks>& fbAndLandmarksVec) {
-    return pImpl->getFaceBoxAndLandmarks(imgPath, faceDetected, fbAndLandmarksVec);
+ErrorCode SDK::getFaceBoxAndLandmarks(const std::string& imgPath, bool& faceDetected, std::vector<FaceBoxAndLandmarks>& faceBoxAndLandmarksVec) {
+    return pImpl->getFaceBoxAndLandmarks(imgPath, faceDetected, faceBoxAndLandmarksVec);
 }
 
 ErrorCode SDK::Impl::getFaceBoxAndLandmarks(const std::string &imgPath, bool &faceDetected, 
-                                            std::vector<FaceBoxAndLandmarks> faceBoxAndLandmarks){
+                                            std::vector<FaceBoxAndLandmarks>& faceBoxAndLandmarksVec){
     auto img = cv::imread(imgPath);
     if(img.empty())
     {
@@ -47,8 +47,8 @@ ErrorCode SDK::Impl::getFaceBoxAndLandmarks(const std::string &imgPath, bool &fa
     }
 
     faceDetected = true;
-    fbAndLandmarksVec.clear();
-    fbAndLandmarksVec.reserve(bboxVec.size());
+    faceBoxAndLandmarksVec.clear();
+    faceBoxAndLandmarksVec.reserve(bboxVec.size());
 
     for (const auto& bbox: bboxVec) {
         FaceBoxAndLandmarks fb;
@@ -65,7 +65,7 @@ ErrorCode SDK::Impl::getFaceBoxAndLandmarks(const std::string &imgPath, bool &fa
             fb.landmarks[i] = p;
         }
 
-        fbAndLandmarksVec.emplace_back(fb);
+        faceBoxAndLandmarksVec.emplace_back(fb);
     }
 
     return ErrorCode::NO_ERROR;

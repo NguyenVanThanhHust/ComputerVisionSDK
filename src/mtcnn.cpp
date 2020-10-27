@@ -80,7 +80,7 @@ MTCNN::~MTCNN(){
     Onet.clear();
 }
 
-void MTCNN::SetMinFace(int minSize){
+void MTCNN::setMinFace(int minSize){
 	minsize = minSize;
 }
 
@@ -113,7 +113,7 @@ void MTCNN::generateBbox(ncnn::Mat score, ncnn::Mat location, std::vector<Bbox>&
     }
 }
 
-void MTCNN::nmsTwoBoxs(vector<Bbox>& boundingBox_, vector<Bbox>& previousBox_, const float overlap_threshold, string modelname)
+void MTCNN::nmsTwoBoxs(vector<Bbox>& boundingBox_, vector<Bbox>& previousBox_, const float overlap_threshold, std::string modelname)
 {
 	if (boundingBox_.empty()) {
 		return;
