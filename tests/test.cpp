@@ -7,7 +7,7 @@
 
 TEST_CASE("Core functionality", "[core]")
 {
-    sdk::MySDK mySdk;
+    sdk::SDK mySdk;
 
     SECTION("Non face image") {
         std::vector<sdk::FaceBoxAndLandmarks> faceBoxAndLandmarksVec;
