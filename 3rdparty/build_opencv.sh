@@ -9,6 +9,10 @@ test -e build_amd64 &&  rm -rf build_amd64
 test -e build_arm32 &&  rm -rf build_arm32
 test -e build_arm64 &&  rm -rf build_arm64
 
+mkdir build_amd64
+mkdir build_arm32
+mkdir build_arm64
+
 # build for amd64
 cd build_amd64
 cmake -D BUILD_LIST=core,imgcodecs,imgproc -D BUILD_SHARED_LIBS=OFF -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF \
@@ -34,7 +38,7 @@ cd ..
 
 # build for arm64
 cd build_arm64
-"../platforms/linux/aarch64-gnu.toolchain.cmake" -D WITH_CAROTENE=OFF -D BUILD_LIST=core,imgcodecs,imgproc \
+cmake -DCMAKE_TOOLCHAIN_FILE="../platforms/linux/aarch64-gnu.toolchain.cmake" -D WITH_CAROTENE=OFF -D BUILD_LIST=core,imgcodecs,imgproc \
 -D BUILD_SHARED_LIBS=OFF -D CMAKE_BUILD_TYPE=RELEASE -D BUILD_DOCS=OFF -D BUILD_EXAMPLES=OFF -D BUILD_opencv_apps=OFF -D BUILD_opencv_python2=OFF \
 -D BUILD_opencv_python3=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D FORCE_VTK=OFF -D WITH_FFMPEG=OFF -D WITH_GDAL=OFF -D WITH_IPP=OFF -D WITH_OPENEXR=OFF \
 -D WITH_OPENGL=OFF -D WITH_QT=OFF -D WITH_TBB=OFF -D WITH_XINE=OFF -D BUILD_JPEG=ON -D BUILD_ZLIB=ON -D BUILD_PNG=ON -D BUILD_TIFF=ON -D BUILD_BUILD_JASPER=OFF \
